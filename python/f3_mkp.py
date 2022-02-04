@@ -1,4 +1,3 @@
-# Libraries
 import pandas as pd
 from datetime import datetime
 import numpy as np
@@ -12,8 +11,6 @@ from python.cl_cleaning import CleaningText as ct
 
 Fecha = datetime.now().strftime('%d-%m-%Y')
 
-#from python.enviar_correo import enviar_correo, cuerpo_correo
-
 class F3MKP():
     dt_string   = datetime.now().strftime('%y%m%d')
     kpi         = pd.DataFrame()
@@ -22,18 +19,20 @@ class F3MKP():
     digitadores = const.get_digitadores()
 
     def __init__(self) -> None:
-        f3_name = '211210_f3'
-        self.kpi_name = '211210_kpi_f3' # TODO restaurar 
-        #f3_name        = input('Ingrese nombre de planilla F3: ')
-        #self.kpi_name  = input('Ingrese nombre de archivo kpi: ')
+        f3_name        = input('Ingrese nombre de planilla F3: ')
+        self.kpi_name  = input('Ingrese nombre de archivo kpi: ')
         self.f3c       = F3Cleaning(f3_name) # Inicializa la clase de limpieza para la planilla de f3
+        with open('python/config/path.txt', "r") as tf:
+                self.path = tf.read()
+                self.path = self.path.replace("\\","/")
+        tf.close()
 
     def build_planilla(self):
         self.load_srx_files()
         self.kpi["USR"] = self.kpi["USR"].str.strip()
         self.planilla = self.get_f3_user_df()
         duplicados = self.planilla.loc[self.planilla.duplicated(['nro_devolucion', 'upc', 'cantidad'])]
-        duplicados.to_excel(f'output/planillas/errores/{self.dt_string}_f3_duplicados.xlsx')
+        duplicados.to_excel(f'{self.path}/output_planillas/errores/{self.dt_string}_f3_duplicados.xlsx')
         self.planilla.drop_duplicates(['nro_devolucion', 'upc', 'cantidad'], inplace=True)
         self.set_estado_agg()
         self.set_local_agg()
@@ -82,11 +81,11 @@ class F3MKP():
 
     def load_srx_files(self) -> None:
         # Files loading
-        self.kpi = pd.read_excel(f"input/datos_srx/{self.kpi_name}.xlsx", usecols=["F3", "PRD_UPC","RTV_NOTES", "USR"], dtype=str)  # Load kpi file
+        self.kpi = pd.read_excel(f"{self.path}/input_planillas/{self.kpi_name}.xlsx", usecols=["F3", "PRD_UPC","RTV_NOTES", "USR"], dtype=str)  # Load kpi file
         self.planilla = self.f3c.clean_f3()   # Load f3 db
 
     def load_consolidado(self) -> None:
-        self.consolidado = pd.read_excel('consolidado/consolidado_f3_marketplace.xlsx', sheet_name='DB',
+        self.consolidado = pd.read_excel(f'{self.path}/consolidado/consolidado_f3_marketplace.xlsx', sheet_name='DB',
                           dtype=str,keep_default_na=False,na_values=[""]).rename(columns={'fecha_revision':'dg_fecha_revision','soporte_es_una_guia_de_transportadora':'dg_soporte_guia_transp',  
                       'ndeg_guia_/_carta_cambio': 'dg_n_guia/_carta_cambio',
                       'transportadora':'dg_transportadora',
@@ -97,8 +96,6 @@ class F3MKP():
                       'f3_corresponde':'dg_f3_corresponde'
                                             },)
 
-     
-        
     def get_planilla(self):
         return self.planilla
     
@@ -142,47 +139,46 @@ class F3MKP():
             print('-- Out: No hay registros para distribuir')
 
     def save_repo(self):
-        #consolidado_agg = pd.read_excel('reporte_distribucion/Reporte_distribucion_agg.xlsx')
-        #consolidado_desc = pd.read_excel('reporte_distribucion/Reporte_distribucion_local.xlsx')
+        path = self.path + "/consolidado"
         reporte_local_agg = self.consolidado.groupby(["digitador_responsable","local_agg"])["cantidad"].count().reset_index()
         reporte_local_agg["fecha_distribucion"] = datetime.now().strftime(('%Y-%m-%d'))
         reporte_local_descrip = self.consolidado.groupby(["digitador_responsable","local_descrip"])["cantidad"].count().reset_index()
         reporte_local_descrip["fecha_distribucion"] = datetime.now().strftime(('%Y-%m-%d'))
-        #reporte_local_agg = pd.concat([consolidado_agg,reporte_local_agg])
-        #reporte_local_descrip= pd.concat([consolidado_desc,reporte_local_descrip])
-        reporte_local_agg.to_excel('reporte_distribucion/Reporte_distribucion_agg.xlsx',index=False)
-        reporte_local_descrip.to_excel('reporte_distribucion/Reporte_distribucion_local.xlsx',index=False)
-        print(f"-- El reporte de distribución se guardó correctamente")
+        reporte_local_agg.to_excel(f'{path}/Reporte_distribucion_agg.xlsx',index=False)
+        reporte_local_descrip.to_excel(f'{path}/Reporte_distribucion_local.xlsx',index=False)
+        print(f"-- El reporte  de distribución se guardó con éxito, ubicación: {path} ")
 
-    def save_linio(self):   
+    def save_linio(self, path):   
         linio = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.proveedor == "linio colombia s.a.s.")] #TODO revisar posicion
-        linio.to_excel(f"output/arvchivos/linio/linio_{self.dt_string}.xlsx",sheet_name = 'DB', index=False)
-        print(" --Se ha guardado el informe de F3 proveedor linio ubicacion: output/arvchivos/linio")
+        linio.to_excel(f"{path}/{self.dt_string}_linio.xlsx",sheet_name = 'DB', index=False)
+        print(f" --Se ha guardado el informe de F3 proveedor linio ubicacion: {path}")
     
-    def save_duplicados(self):
+    def save_duplicados(self, path):
         duplicados = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.local_agg != "NAN")  & (self.consolidado.folio_f12.notna()) & (self.consolidado.duplicado.notna())]
-        duplicados.to_excel(f"output/arvchivos/duplicados/duplicados_{self.dt_string}.xlsx",sheet_name = 'DB', index=False)
-        print(" --Se ha guardado el informe de F3 duplicados ubicacion: output/arvchivos/duplicados")
+        duplicados.to_excel(f"{path}/{self.dt_string}_duplicados.xlsx",sheet_name = 'DB', index=False)
+        print(f" --Se ha guardado el informe de F3 duplicados ubicacion: {path}")
 
-    def save_f3_sin_f12(self):
+    def save_f3_sin_f12(self, path):
         f3_sin_f12 = self.consolidado.loc[self.consolidado.folio_f12.isna() & (self.consolidado.estado_agg == "abierto")]
-        f3_sin_f12.to_excel(f"output/arvchivos/f3 sin f12/f3_sin_f12_{self.dt_string}.xlsx",sheet_name = 'DB', index=False)
-        print(" --Se ha guardado el informe de F3 sin F12 ubicacion: output/arvchivos/f3 sin f12")
+        f3_sin_f12.to_excel(f"{path}/{self.dt_string}_f3_sin_f12.xlsx",sheet_name = 'DB', index=False)
+        print(f" --Se ha guardado el informe de F3 sin F12 ubicacion: {path}")
 
     def save_dfs(self, lista_dist):
-        path = f'output/distribucion/{self.dt_string}'
-        mkdir(path)
+        path_admin = self.path +f"/distribución/gestión_administrador/{self.dt_string}"
+        path_digitador = self.path +f"/distribución/gestión_digitador/{self.dt_string}"
+        mkdir(path_admin)
+        mkdir(path_digitador)
         self.guardar_consolidado()
         for digitador, df in lista_dist:
             aux_name = f'{self.dt_string}_dist_{digitador}'
-            df.to_excel(f'{path}/{aux_name}.xlsx',sheet_name = aux_name, index=False)
+            df.to_excel(f'{path_digitador}/{aux_name}.xlsx',sheet_name = aux_name, index=False)
             print(f'Archivo {self.dt_string}_dist_{digitador} guardado con éxito') 
-        self.save_linio()
-        self.save_f3_sin_f12()
-        self.save_duplicados()
+        self.save_linio(path_admin)
+        self.save_f3_sin_f12(path_admin)
+        self.save_duplicados(path_admin)
 
     def unir_planillas_d(self,folder):
-        path = f'input/resultados_digitadores/{folder}'
+        path = self.path +f"/distribución/gestión_digitador/{folder}"
         files_names = [f for f in listdir(path) if isfile(join(path, f))]
         files_store = []
         for i in files_names: 
@@ -212,9 +208,10 @@ class F3MKP():
         self.consolidado["indice_f3"] = pd.to_numeric(self.consolidado.indice_f3) #TODO revisar posicion
         self.consolidado.loc[(~self.consolidado.indice_f3.isin(si_cambio)) & (self.consolidado.tipificacion_1.isna()), ["digitador_responsable", "entregado_a_adm" ]] = np.nan
         
-    def guardar_consolidado(self):    
-        self.consolidado.to_excel(f'consolidado/consolidado_f3_marketplace.xlsx',sheet_name = 'DB', index=False) 
-        print("--El consolidado se guardó ubicación: consolidado/consolidado_f3_marketplace.xlsx")
+    def guardar_consolidado(self):
+        path = self.path + "/consolidado" 
+        self.consolidado.to_excel(f'{path}/consolidado_f3_marketplace.xlsx',sheet_name = 'DB', index=False) 
+        print(f"--El consolidado se guardó ubicación: {path}")
     
     def agregar_gestionados(self, si_cambio, dist_digitadores):
         dist_digitadores = dist_digitadores.set_index("indice_f3")
@@ -245,21 +242,21 @@ class F3MKP():
 
         if len(list_dir_no_coinc) > 0 :
             dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dir_no_coinc), "tipificacion_1"] = "Dirección no coincide"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dir_no_coinc), "decision"] = "en proceso"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dir_no_coinc), "estado_proceso"] =  "en proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dir_no_coinc), "decision"] = "En proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dir_no_coinc), "estado_proceso"] =  "En proceso"
             dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dir_no_coinc), "responsable_de_gestion"] = "MKP"
             dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dir_no_coinc), "gestion"] =  "Enviar correo al seller y confirmar que recibido el F12"
 
         if len(list_sop_valido) > 0 :
             dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_valido), "tipificacion_1"] = "Soporte válido"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_valido), "decision"] = "solicitar confirmación"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_valido), "estado_proceso"] =  "cerrado"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_valido), "decision"] = "Solicitar confirmación"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_valido), "estado_proceso"] =  "Cerrado"
             
         if len(list_sop_inv) > 0 :
             cont = 0
             dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_inv), "tipificacion_1"] = "Soporte inválido"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_inv), "decision"] = "en proceso"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_inv), "estado_proceso"] =  "en proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_inv), "decision"] = "En proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_inv), "estado_proceso"] =  "En proceso"
             for i in const.locales:
                         dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_inv) & (dist_digitadores.local_agg == i ),"gestion"] = const.gestion[cont]
                         dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sop_inv) & (dist_digitadores.local_agg == i ),"responsable_de_gestion" ]= i
@@ -268,8 +265,8 @@ class F3MKP():
         if len(list_sin_sop) > 0 :
             cont = 0
             dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sin_sop), "tipificacion_1"] = "Sin soporte"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sin_sop), "decision"] = "en proceso"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sin_sop), "estado_proceso"] =  "en proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sin_sop), "decision"] = "En proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sin_sop), "estado_proceso"] =  "En proceso"
             for i in const.locales:
                         dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sin_sop) & (dist_digitadores.local_agg == i ),"gestion"] = const.gestion[cont]
                         dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_sin_sop) & (dist_digitadores.local_agg == i ),"responsable_de_gestion" ]= i
@@ -277,8 +274,8 @@ class F3MKP():
 
         if len(list_dev_a_rem) > 0:
             dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dev_a_rem), "tipificacion_1"] = "Devuelto a remitente"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dev_a_rem), "decision"] = "en proceso"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dev_a_rem), "estado_proceso"] =  "en proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dev_a_rem), "decision"] = "En proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dev_a_rem), "estado_proceso"] =  "En proceso"
             cont = 0 
             for i in const.locales:
                 dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_dev_a_rem) & (dist_digitadores.local_agg == i ),"gestion"] = "ubicar el producto, relacionarlo en el archivo de devoluciones y volverlo a enviar - relacionar el nuevo número de guía"
@@ -287,37 +284,39 @@ class F3MKP():
                 
         if len(list_env_en_rut) > 0:
             dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_env_en_rut), "tipificacion_1"] = "Envío en ruta"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_env_en_rut), "decision"] = "en proceso"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_env_en_rut), "estado_proceso"] =  "en proceso"
-            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_env_en_rut), "gestion"] = "revisar que  la guía no supere 8 días calendario posteriores al envío "
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_env_en_rut), "decision"] = "En proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_env_en_rut), "estado_proceso"] =  "En proceso"
+            dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_env_en_rut), "gestion"] = "Revisar que  la guía no supere 8 días calendario posteriores al envío "
             dist_digitadores.loc[dist_digitadores.nro_devolucion.isin(list_env_en_rut), "responsable_de_gestion" ]= "MKP"
 
         dist_digitadores.loc[dist_digitadores.tipificacion_1.isna(), "tipificacion_1"] = "Revisar diligenciamiento"
         
         return dist_digitadores
 
-    def save_f3_a_validar(self):
-        validar = self.consolidado.loc[self.consolidado.tipificacion_1 =="Soporte válido",["nro_devolucion","folio_f12","proveedor","rut_proveedor","local","estado_descrip"]]
-        validar.to_excel(f"output/arvchivos/f3 a confirmar/f3_a_confirmar_{self.dt_string}.xlsx",sheet_name = 'DB', index=False)
-        print("-- Se guardó el archivo f3 a confirmar ubicación: output/arvchivos/f3 a confirmar")
+    def save_f3_a_validar(self): # TODO revisar los filtros para la selección de la info 
+        path = self.path + "/consolidado/resultado_unificación"   
+        validar = self.consolidado.loc[self.consolidado.tipificacion_1 =="Soporte válido",["nro_devolucion","folio_f12","proveedor","rut_proveedor","local","estado_descrip"]] #TODO hay que modificar el filtro.
+        validar.to_excel(f"{path}/{self.dt_string}_f3_a_confirmar.xlsx",sheet_name = 'DB', index=False)
+        print(f"-- Se guardó el archivo f3 a confirmar ubicación: {path}")
 
-    def calculos_correo (self):
+    def calculos_correo(self):
+        path = 'python/temp/'
         x_estado_desc= self.planilla.groupby(['estado_descrip']).agg({'cant*costoprmd': 'sum', 'nro_devolucion': 'nunique'}).reset_index()
         x_estado_desc["cant*costoprmd"] = x_estado_desc["cant*costoprmd"]/1e6
-        x_estado_desc.to_html("output/estado_desc.html", index=False, classes='table table-striped',justify="center")
+        x_estado_desc.to_html(f"{path}/estado_desc.html", index=False, classes='table table-striped',justify="center")
         x_estado_agg = self.planilla.groupby("estado_agg")['cant*costoprmd'].sum().reset_index()
         x_estado_agg['cant*costoprmd'] = x_estado_agg['cant*costoprmd']/1e6
-        x_estado_agg.to_html("output/estado_agg.html", index=False, classes='table table-striped',justify="center")
+        x_estado_agg.to_html(f"{path}/estado_agg.html", index=False, classes='table table-striped',justify="center")
         x_local_agg =self.planilla.loc[self.planilla.estado_agg == "abierto"]
         x_local_agg = x_local_agg.groupby(["local_agg"]).agg({'cant*costoprmd': 'sum', "nro_devolucion": "nunique"}).reset_index()
         x_local_agg["cant*costoprmd"] = x_local_agg["cant*costoprmd"]/1e6
-        x_local_agg.to_html("output/local_agg.html", index=False, classes='table table-striped',justify="center")
+        x_local_agg.to_html(f"{path}/local_agg.html", index=False, classes='table table-striped',justify="center")
         local_agg= px.bar(x_local_agg, x='local_agg', y= 'cant*costoprmd', title= "Resumen de F3 por local",labels={'local_agg':'Locales','cant*costoprmd':'Valor'},  text='cant*costoprmd') 
-        local_agg.write_image("output/local_agg.jpg")
+        local_agg.write_image(f"{path}/local_agg.jpg")
         estado_agg=px.bar(x_estado_agg, x='estado_agg', y= 'cant*costoprmd', title= "Resumen de F3 por estado agg",labels={'estado_agg':'Estado','cant*costoprmd':'Valor'},  text='cant*costoprmd')
-        estado_agg.write_image("output/estado_agg.jpg")
+        estado_agg.write_image(f"{path}/estado_agg.jpg")
         estado_desc=px.bar(x_estado_desc, x='estado_descrip', y= 'cant*costoprmd', title= "Resumen de F3 por estado",labels={'estado_descrip':'Estado','cant*costoprmd':'Valor'},  text='cant*costoprmd')
-        estado_desc.write_image("output/estado_desc.jpg")
+        estado_desc.write_image(f"{path}/estado_desc.jpg")
 
     def conv_text(self,dist_digitador, op):
         for i in const.cols_a_validar[3:]:

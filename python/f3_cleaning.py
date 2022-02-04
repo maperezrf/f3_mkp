@@ -19,7 +19,11 @@ class F3Cleaning():
         self.f3_name = file_name
 
     def clean_f3(self):
-        f3_lines = delete_initial_rows(f'input/datos_srx/{self.f3_name}.txt')
+        file_path = open('python/config/path.txt')
+        path = file_path.readline()
+        file_path.close()
+
+        f3_lines = delete_initial_rows(f'{path}/input_planillas/{self.f3_name}.txt')
         f3 = pd.read_csv(io.StringIO("\n".join(f3_lines)), sep=';', dtype='object', on_bad_lines='skip' )
         a = f3.shape[0]
 
