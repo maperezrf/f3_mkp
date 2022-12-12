@@ -186,7 +186,7 @@ def menu_general():
             if folder != "0":
                 message()
                 nc_df = f3mkp.unir_planillas_d(folder)
-                indice_si_cambio=f3mkp.compare_dfs(nc_df)
+                indice_si_cambio = f3mkp.compare_dfs(nc_df)
                 if len(indice_si_cambio) > 0:
                     f3mkp.disponibilizar_no_gest(indice_si_cambio)
                     nc_df = f3mkp.conv_text(nc_df,"low")
@@ -215,7 +215,7 @@ def menu_general():
             message()
             f3mkp.build_planilla()
             planilla = f3mkp.get_planilla()
-            path = f'{f3mkp.path}output_planillas/{dt_string}_F3_MKP.xlsx'
+            path = f'{f3mkp.path}/output_planillas/{dt_string}_F3_MKP.xlsx'
             planilla.to_excel(path, index=False)  # Database saving
             print('# Output: --------------------------------------------------------------')
             print(f'  -- Out::La planilla fue guardada en: {path} \n')
@@ -241,9 +241,6 @@ def menu_general():
             #os.system("cls") # TODO revisar si eliminar
         else: 
             print('Ingrese una opción valida (0-5)')
-
-
-
 
 menu_general()
 

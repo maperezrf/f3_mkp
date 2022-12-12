@@ -119,7 +119,7 @@ class F3MKP():
         self.planilla = self.planilla.loc[self.planilla.fecha_reserva >= date].reset_index(drop=True)
 
     def div_planilla(self, digitadores = list(digitadores.values())):
-        df_a_distribuir_f = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.local_agg != "NAN")  & (self.consolidado.folio_f12.notna()) & (self.consolidado.proveedor != "linio colombia s.a.s.") & (self.consolidado.dup_f3 != "no") & (self.consolidado.duplicado.isna()) & (self.consolidado['digitador_responsable'].isna())]
+        df_a_distribuir_f = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.local_agg != "NAN")  & (self.consolidado.folio_f12.notna())  & (self.consolidado.dup_f3 != "no") & (self.consolidado.duplicado.isna()) & (self.consolidado['digitador_responsable'].isna())] #& (self.consolidado.proveedor != "linio colombia s.a.s.")
         if df_a_distribuir_f.shape[0] > 0:
             cantidad_a_distribuir= df_a_distribuir_f.groupby("local_agg")["nro_devolucion"].count()
             print(cantidad_a_distribuir)

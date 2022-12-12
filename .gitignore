@@ -10,6 +10,7 @@ python/llave/
 python/config/
 consolidado/
 reporte_distribucion/
+jupyther/
 # C extensions
 *.so
 
