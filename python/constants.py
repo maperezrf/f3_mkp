@@ -47,9 +47,9 @@ cols_para_digitador = ['indice_f3','nro_devolucion', 'fecha_reserva','dg_fecha_r
        'dg_entregado_guia_plataf_transp', 'dg_seller_en_destinatario', 
        'dg_direccion_seller', 'dg_f12_f11_corresponde', 'dg_f3_corresponde', 'novedad', 
        'upc', 'sku', 'descripcion', 'marca', 
-       'proveedor', 'rut_proveedor', # pendiente de validación 
+       'proveedor', 'rut_proveedor','estado_descrip',
        'local', 'local_descrip', 'local_agg', 'cantidad', 'cant*costoprmd',
-       'tipo_documento_para_dev', # pendiente de validación 
+       'tipo_documento_para_dev',
        'folio_f11', 'folio_f12']
 
 cols_a_incoporar_consolidado_a_planilla = [

@@ -123,7 +123,7 @@ class F3MKP():
         self.planilla = self.planilla.loc[self.planilla.fecha_reserva >= date].reset_index(drop=True)
 
     def div_planilla(self, digitadores = list(digitadores.values())):
-        df_a_distribuir_f = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.local_agg != "NAN")  & (self.consolidado.folio_f12.notna())  & (self.consolidado.dup_f3 != "no") & (self.consolidado.duplicado.isna()) & (self.consolidado['digitador_responsable'].isna())] #& (self.consolidado.proveedor != "linio colombia s.a.s.")
+        df_a_distribuir_f = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.local_agg != "NAN")  & (self.consolidado.folio_f12.notna())  & (self.consolidado.dup_f3 != "no") & (self.consolidado.duplicado.isna()) & (self.consolidado['digitador_responsable'].isna())]
         if df_a_distribuir_f.shape[0] > 0:
             cantidad_a_distribuir= df_a_distribuir_f.groupby("local_agg")["nro_devolucion"].count()
             print(cantidad_a_distribuir)
@@ -297,9 +297,9 @@ class F3MKP():
         
         return dist_digitadores
 
-    def save_f3_a_validar(self): # TODO revisar los filtros para la selección de la info 
+    def save_f3_a_validar(self, df): # TODO revisar los filtros para la selección de la info 
         path = self.path + "/consolidado/resultado_unificación"   
-        validar = self.consolidado.loc[self.consolidado.tipificacion_1 =="Soporte válido",["nro_devolucion","folio_f12","proveedor","rut_proveedor","local","estado_descrip"]] #TODO hay que modificar el filtro.
+        validar = df.loc[df.tipificacion_1 == "Soporte válido" ,["nro_devolucion","folio_f12","proveedor","rut_proveedor","local","estado_descrip"]]
         validar.to_excel(f"{path}/{self.dt_string}_f3_a_confirmar.xlsx",sheet_name = 'DB', index=False)
         print(f"-- Se guardó el archivo f3 a confirmar ubicación: {path}")
 
@@ -339,3 +339,17 @@ class F3MKP():
         self.consolidado['folio_f12'].fillna(self.consolidado['new_f12'],inplace=True)
         self.consolidado.drop(['new_f12'], axis=1, inplace=True)
         self.guardar_consolidado()
+
+    def rev_dup(self,dup_name):
+        self.load_consolidado()
+        path = f'{self.path}/output_planillas/f11_f12_duplicados/'
+        duplicados = pd.read_excel(f'{self.path}/input_planillas/{dup_name}.xlsx' , dtype= 'str', usecols= ["nro_devolucion","folio_f11","folio_f12"])
+        foliof12 = duplicados.loc[duplicados.folio_f12.notna(), "folio_f12"].unique()
+        foliof11 = duplicados.loc[duplicados.folio_f11.notna(), "folio_f11"].unique()
+        dup_f12 = self.consolidado.loc[self.consolidado.folio_f12.isin(foliof12), ['nro_devolucion','upc', 'sku', 'descripcion', 'local', 'local_descrip','proveedor','estado_descrip', 'estado_agg','folio_f11', 'folio_f12']]
+        dup_f11 = self.consolidado.loc[self.consolidado.folio_f11.isin(foliof11), ['nro_devolucion','upc', 'sku', 'descripcion', 'local', 'local_descrip','proveedor','estado_descrip', 'estado_agg','folio_f11', 'folio_f12']]
+        dup_f12.sort_values('folio_f12',inplace=True)
+        dup_f11.sort_values('folio_f11',inplace=True)
+        dup_f12.to_excel(f'{path}{self.dt_string}_duplicados_f12.xlsx', index = False)
+        dup_f11.to_excel(f'{path}{self.dt_string}_duplicados_f11.xlsx', index = False)
+        print(f"-- Se guardaron los archivos de duplicados: {path}")
