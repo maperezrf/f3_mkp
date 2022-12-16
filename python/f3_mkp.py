@@ -70,14 +70,18 @@ class F3MKP():
     def build_consolidado(self):
         self.load_consolidado()
         self.build_planilla()
-        self.planilla["aux_f12"] = self.consolidado.folio_f12
+        self.aux_f12 = pd.DataFrame()
+        self.aux_f12["nro_devolucion"] = self.consolidado.nro_devolucion
+        self.aux_f12["upc"] = self.consolidado.upc
+        self.aux_f12["cantidad"] = self.consolidado.cantidad
+        self.aux_f12["aux_f12"] = self.consolidado.folio_f12
+        self.planilla = self.planilla.merge(self.aux_f12, how="left", on=["nro_devolucion","upc", "cantidad"])
         self.planilla.folio_f12.fillna(self.planilla.aux_f12,inplace=True)
-        self.planilla.drop(['nro_guia', 'subclase', 'descripcion1', 'clase', 'descripcion2', 'sublinea', 'descripcion3','linea', 'descripcion4', 'estado', 'cant*costo', 'diferencia', 'cant*precio', 'usuario_que_confirma',"aux_f12"], axis=1, inplace=True)
-        self.consolidado = self.planilla.merge(self.consolidado[const.cols_a_incoporar_consolidado_a_planilla], how="left" , on=["nro_devolucion","upc", "cantidad"]) 
+        self.planilla.drop(['nro_guia', 'subclase', 'descripcion1', 'clase', 'descripcion2', 'sublinea', 'descripcion3','linea', 'descripcion4', 'estado', 'cant*costo', 'diferencia', 'cant*precio', 'usuario_que_confirma'], axis=1, inplace=True)
+        self.consolidado = self.planilla.merge(self.consolidado[const.cols_a_incoporar_consolidado_a_planilla], how="left" , on=["nro_devolucion","upc", "cantidad"])
         self.consolidado = self.consolidado.reindex(columns=const.cols_consolidado)
         self.consolidado.reset_index(inplace=True)
-        self.consolidado.rename(columns = {"index": "indice_f3"}, inplace=True)
-        #self.rdate_filter()
+        self.consolidado.rename(columns = {"index": "indice_f3"}, inplace=True) 
 
     def load_srx_files(self) -> None:
         # Files loading
@@ -326,3 +330,12 @@ class F3MKP():
             elif op == "upp":
                 dist_digitador[f"{i}"] = dist_digitador[f"{i}"].str.upper()
         return dist_digitador
+    
+    def set_f12_f3(self, name_file):
+        self.load_consolidado()
+        self.correct_f12 = pd.read_excel(f'{self.path}/input_planillas/{name_file}.xlsx', dtype=str)
+        self.correct_f12 = self.correct_f12.rename(columns={'folio_f12':'new_f12'})
+        self.consolidado = self.consolidado.merge(self.correct_f12, how='left', on= ['nro_devolucion'])
+        self.consolidado['folio_f12'].fillna(self.consolidado['new_f12'],inplace=True)
+        self.consolidado.drop(['new_f12'], axis=1, inplace=True)
+        self.guardar_consolidado()

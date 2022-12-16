@@ -176,7 +176,7 @@ def menu_general():
         digitadores = const.get_digitadores()
         selection = ''
         print('  ## Menú ----------------------')
-        print('    1. Distribuir registros \n    2. Unificar registros \n    3. BOT Katherine \n    4. Generar planilla F3 \n    5. Enviar correo \n    6. Configuraciones \n    0. Salir')
+        print('    1. Distribuir registros \n    2. Unificar registros \n    3. BOT Katherine \n    4. Generar planilla F3 \n    5. Enviar correo \n    7. Agregar F12 \n    78. Configuraciones \n    0. Salir')
         message('++ In: Por favor digite una opción: ')
         selection = input()
         if selection == '1':
@@ -233,8 +233,13 @@ def menu_general():
             contraseña = getpass.getpass()
             email.send_email(correo,contraseña)
             print ("-------------**** El correo fue enviado exitosamente ****-------------")
-            pausa()        
-        elif selection == '6': #TODO pasar a metodos.
+            pausa()    
+        elif selection == '7':
+            message("    ++ In: Ingrese el nombre del archivo: ")
+            name_file = input()
+            message()
+            f3mkp.set_f12_f3(name_file)
+        elif selection == '8': #TODO pasar a metodos.
             menu_configuracion()
         elif selection == '0':
             menu_start=False

@@ -8,7 +8,7 @@ nan = ['11','9910','3004','3006','9902', '9921','9951']
 # digitadores = {1:"Angie",2:"Miguel",3:"Pablo"}
 
 def get_digitadores(): # TODO cambiar lugar, poner en otro archivo, unificar con el resto de métodos de digitores
-       path_digitadores = 'python/config/digitadores.txt'
+       path_digitadores = 'python\config\digitadores.txt'
        dic_digitadores={}
        with open(path_digitadores, "r") as tf:
               lines = tf.read().split(',')
