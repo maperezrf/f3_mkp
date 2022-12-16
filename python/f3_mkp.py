@@ -354,10 +354,7 @@ class F3MKP():
         dup_f11.to_excel(f'{path}{self.dt_string}_duplicados_f11.xlsx', index = False)
         print(f"-- Se guardaron los archivos de duplicados: {path}")
 
-    def redistribucion(self):
-        pd.set_option('display.max_columns', 500)
-        pd.set_option('display.max_columns', 500)
-        file = input("por favor ingrese el nombre del archivo a distribuir: ")
+    def redistribucion(self, file):
         f3_red = pd.read_excel(f"{self.path}/input_planillas/{file}.xlsx")
         list_dist = f3_red.nro_devolucion.unique()
         self.load_consolidado()

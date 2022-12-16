@@ -247,7 +247,11 @@ def menu_general():
             f3mkp.set_f12_f3(name_file)
             pausa()
         elif selection == '8':
-            f3mkp.redistribucion()
+            message("    ++ In: Por favor ingrese el nombre del archivo a distribuir: ")
+            name_file = input()
+            message()
+            f3mkp.redistribucion(name_file)
+            pausa()
         elif selection == '9': #TODO pasar a metodos.
 
             menu_configuracion()
