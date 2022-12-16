@@ -176,7 +176,7 @@ def menu_general():
         digitadores = const.get_digitadores()
         selection = ''
         print('  ## Menú ----------------------')
-        print('    1. Distribuir registros \n    2. Unificar registros \n    3. BOT Katherine \n    4. Generar planilla F3 \n    5. Enviar correo \n    6. Revisar duplicados F11 ó F12 \n    7. Agregar F12 \n    78. Configuraciones \n    0. Salir')
+        print('    1. Distribuir registros \n    2. Unificar registros \n    3. BOT Katherine \n    4. Generar planilla F3 \n    5. Enviar correo \n    6. Revisar duplicados F11 ó F12 \n    7. Agregar F12 \n    8. Redistribuir \n    9. Configuraciones \n    0. Salir')
         message('++ In: Por favor digite una opción: ')
         selection = input()
         if selection == '1':
@@ -246,7 +246,9 @@ def menu_general():
             message()
             f3mkp.set_f12_f3(name_file)
             pausa()
-        elif selection == '8': #TODO pasar a metodos.
+        elif selection == '8':
+            f3mkp.redistribucion()
+        elif selection == '9': #TODO pasar a metodos.
 
             menu_configuracion()
         elif selection == '0':

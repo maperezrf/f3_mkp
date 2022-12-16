@@ -353,3 +353,20 @@ class F3MKP():
         dup_f12.to_excel(f'{path}{self.dt_string}_duplicados_f12.xlsx', index = False)
         dup_f11.to_excel(f'{path}{self.dt_string}_duplicados_f11.xlsx', index = False)
         print(f"-- Se guardaron los archivos de duplicados: {path}")
+
+    def redistribucion(self):
+        pd.set_option('display.max_columns', 500)
+        pd.set_option('display.max_columns', 500)
+        file = input("por favor ingrese el nombre del archivo a distribuir: ")
+        f3_red = pd.read_excel(f"{self.path}/input_planillas/{file}.xlsx")
+        list_dist = f3_red.nro_devolucion.unique()
+        self.load_consolidado()
+        self.consolidado.nro_devolucion = pd.to_numeric(self.consolidado.nro_devolucion)
+        list =self.consolidado.loc[(self.consolidado.nro_devolucion.isin(list_dist))].nro_devolucion
+        indice = self.consolidado.loc[(self.consolidado.nro_devolucion.isin(list_dist)) &   (self.consolidado["dup_f3"]!='no') ,'indice_f3']
+        self.consolidado.loc[(self.consolidado.indice_f3.isin(indice)), 'digitador_responsable'] = np.nan
+        self.consolidado.loc[(self.consolidado.indice_f3.isin(indice)), 'tipificacion_1'] = np.nan
+        if len(list_dist) == self.consolidado.loc[(self.consolidado.indice_f3.isin(indice))].shape[0]:
+            self.guardar_consolidado()
+        else:
+            print("----NO SE PUEDE GUARDAR EL CONSOLIDADO---")
