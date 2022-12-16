@@ -53,8 +53,8 @@ class F3MKP():
         self.planilla.drop(['ncp_f11', 'ncp_f12','rtv_notes', 'rtv_f11','rtv_f12'], axis=1, inplace=True)
     
     def ident_dupl(self):
-        planilla_auxf11  = self.planilla.groupby(["folio_f11","upc","cantidad"])["nro_devolucion"].nunique().reset_index()
-        planilla_auxf12 = self.planilla.groupby(["folio_f12","upc","cantidad"])["nro_devolucion"].nunique().reset_index()
+        planilla_auxf11  = self.planilla.loc[self.planilla['estado_agg'] == 'abierto'].groupby(["folio_f11","upc","cantidad"])["nro_devolucion"].nunique().reset_index()
+        planilla_auxf12 = self.planilla.loc[self.planilla['estado_agg'] == 'abierto'].groupby(["folio_f12","upc","cantidad"])["nro_devolucion"].nunique().reset_index()
         indice_f11 = planilla_auxf11.loc[planilla_auxf11.nro_devolucion > 1].folio_f11
         indice_f12 = planilla_auxf12.loc[planilla_auxf12.nro_devolucion > 1].folio_f12
         self.planilla.loc[self.planilla.folio_f11.isin(indice_f11), "duplicado"] = "duplicado"

@@ -258,19 +258,3 @@ def menu_general():
             print('Ingrese una opción valida (0-5)')
 
 menu_general()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
