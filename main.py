@@ -239,6 +239,7 @@ def menu_general():
             name_file = input()
             message()
             f3mkp.set_f12_f3(name_file)
+            pausa()
         elif selection == '8': #TODO pasar a metodos.
             menu_configuracion()
         elif selection == '0':
