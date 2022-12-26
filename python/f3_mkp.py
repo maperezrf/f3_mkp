@@ -59,7 +59,7 @@ class F3MKP():
         indice_f12 = planilla_auxf12.loc[planilla_auxf12.nro_devolucion > 1].folio_f12
         self.planilla.loc[self.planilla.folio_f11.isin(indice_f11), "duplicado"] = "duplicado"
         self.planilla.loc[self.planilla.folio_f12.isin(indice_f12), "duplicado"] = "duplicado"
-        grup = self.planilla.groupby(['nro_devolucion','folio_f12'])["upc"].nunique().reset_index()  # TODO  pasar a metodo y .loc[duplicated('nro_devolucion), 'dup_f3'] ='y'.loc[~duplicated('nro_devolucion), 'dup_f3'] ='n'
+        grup = self.planilla.groupby(['nro_devolucion'])["upc"].nunique().reset_index()  # TODO  pasar a metodo y .loc[duplicated('nro_devolucion), 'dup_f3'] ='y'.loc[~duplicated('nro_devolucion), 'dup_f3'] ='n'
         dup = grup.loc[grup.upc > 1].nro_devolucion
         self.planilla.loc[self.planilla.nro_devolucion.isin(dup),'dup_f3'] = "no"
         self.planilla.reset_index()
@@ -124,20 +124,38 @@ class F3MKP():
 
     def div_planilla(self, digitadores = list(digitadores.values())):
         df_a_distribuir_f = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.local_agg != "NAN")  & (self.consolidado.folio_f12.notna())  & (self.consolidado.dup_f3 != "no") & (self.consolidado.duplicado.isna()) & (self.consolidado['digitador_responsable'].isna())]
+        df_a_distribuir_dup = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.local_agg != "NAN")  & (self.consolidado.folio_f12.notna())  & (self.consolidado.dup_f3 != "no") & (self.consolidado.duplicado == 'duplicado') & (self.consolidado['digitador_responsable'].isna())]
         if df_a_distribuir_f.shape[0] > 0:
-            cantidad_a_distribuir= df_a_distribuir_f.groupby("local_agg")["nro_devolucion"].count()
-            print(cantidad_a_distribuir)
-            df_a_distribuir_f = df_a_distribuir_f.sort_values(["local_agg","local"])#ordena el df x local_agg y 
-            df_a_distribuir_f = df_a_distribuir_f[const.cols_para_digitador]
-            div = np.array_split(df_a_distribuir_f, len(digitadores))
-            lista_df_x_digitador = []
-            for i, df in enumerate(div): 
-                digitador = digitadores[i]
-                df['digitador_responsable'] = digitador
-                self.consolidado.loc[df.index, "digitador_responsable"] = digitador
-                lista_df_x_digitador.append([ digitador , df])
-            self.save_dfs(lista_df_x_digitador)
-            self.save_repo()
+            # if df_a_distribuir_dup.shape[0] > 0:
+            #     df_a_distribuir_dup
+            #     df_a_distribuir_f = pd.concat([df_a_distribuir_f, df_a_distribuir_dup])
+            #     cantidad_a_distribuir= df_a_distribuir_f.groupby("local_agg")["nro_devolucion"].count()
+            #     #print(cantidad_a_distribuir)
+            #     df_a_distribuir_f = df_a_distribuir_f.sort_values(['duplicado',"local_agg","local"])#ordena el df x local_agg y 
+            #     df_a_distribuir_f = df_a_distribuir_f[const.cols_para_digitador]
+            #     div = np.array_split(df_a_distribuir_f, len(digitadores))
+            #     lista_df_x_digitador = []
+            #     for i, df in enumerate(div): 
+            #         digitador = digitadores[i]
+            #         df['digitador_responsable'] = digitador
+            #         self.consolidado.loc[df.index, "digitador_responsable"] = digitador
+            #         lista_df_x_digitador.append([ digitador , df])
+            #     self.save_dfs(lista_df_x_digitador)
+            #     self.save_repo()
+            #else:
+                cantidad_a_distribuir= df_a_distribuir_f.groupby("local_agg")["nro_devolucion"].count()
+                print(cantidad_a_distribuir)
+                df_a_distribuir_f = df_a_distribuir_f.sort_values(["local_agg","local"])#ordena el df x local_agg y 
+                df_a_distribuir_f = df_a_distribuir_f[const.cols_para_digitador]
+                div = np.array_split(df_a_distribuir_f, len(digitadores))
+                lista_df_x_digitador = []
+                for i, df in enumerate(div): 
+                    digitador = digitadores[i]
+                    df['digitador_responsable'] = digitador
+                    self.consolidado.loc[df.index, "digitador_responsable"] = digitador
+                    lista_df_x_digitador.append([ digitador , df])
+                self.save_dfs(lista_df_x_digitador)
+                self.save_repo()
             
         else: 
             print('-- Out: No hay registros para distribuir')
