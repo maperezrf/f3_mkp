@@ -126,36 +126,29 @@ class F3MKP():
         df_a_distribuir_f = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.local_agg != "NAN")  & (self.consolidado.folio_f12.notna())  & (self.consolidado.dup_f3 != "no") & (self.consolidado.duplicado.isna()) & (self.consolidado['digitador_responsable'].isna())]
         df_a_distribuir_dup = self.consolidado.loc[(self.consolidado.estado_agg == "abierto" ) & (self.consolidado.local_agg != "NAN")  & (self.consolidado.folio_f12.notna())  & (self.consolidado.dup_f3 != "no") & (self.consolidado.duplicado == 'duplicado') & (self.consolidado['digitador_responsable'].isna())]
         if df_a_distribuir_f.shape[0] > 0:
-            if df_a_distribuir_dup.shape[0] > 0:
-                df_a_distribuir_dup
-                df_a_distribuir_f = pd.concat([df_a_distribuir_f, df_a_distribuir_dup])
-                cantidad_a_distribuir= df_a_distribuir_f.groupby("local_agg")["nro_devolucion"].count()
-                #print(cantidad_a_distribuir)
-                df_a_distribuir_f = df_a_distribuir_f.sort_values(['duplicado',"local_agg","local"])#ordena el df x local_agg y 
-                df_a_distribuir_f = df_a_distribuir_f[const.cols_para_digitador]
-                div = np.array_split(df_a_distribuir_f, len(digitadores))
-                lista_df_x_digitador = []
-                for i, df in enumerate(div): 
-                    digitador = digitadores[i]
-                    df['digitador_responsable'] = digitador
-                    self.consolidado.loc[df.index, "digitador_responsable"] = digitador
-                    lista_df_x_digitador.append([ digitador , df])
-                self.save_dfs(lista_df_x_digitador)
-                self.save_repo()
-            else:
-                cantidad_a_distribuir= df_a_distribuir_f.groupby("local_agg")["nro_devolucion"].count()
-                print(cantidad_a_distribuir)
-                df_a_distribuir_f = df_a_distribuir_f.sort_values(["local_agg","local"])#ordena el df x local_agg y 
-                df_a_distribuir_f = df_a_distribuir_f[const.cols_para_digitador]
-                div = np.array_split(df_a_distribuir_f, len(digitadores))
-                lista_df_x_digitador = []
-                for i, df in enumerate(div): 
-                    digitador = digitadores[i]
-                    df['digitador_responsable'] = digitador
-                    self.consolidado.loc[df.index, "digitador_responsable"] = digitador
-                    lista_df_x_digitador.append([ digitador , df])
-                self.save_dfs(lista_df_x_digitador)
-                self.save_repo()
+            cantidad_a_distribuir= df_a_distribuir_f.groupby("local_agg")["nro_devolucion"].count()
+            print(cantidad_a_distribuir)
+            df_a_distribuir_f = df_a_distribuir_f.sort_values(["local_agg","local"])#ordena el df x local_agg y 
+            df_a_distribuir_f = df_a_distribuir_f[const.cols_para_digitador]
+            df_a_distribuir_dup = df_a_distribuir_dup[const.cols_para_digitador]
+            div = np.array_split(df_a_distribuir_f, len(digitadores))
+            lista_df_x_digitador = []
+            for i, df in enumerate(div):
+                digitador = digitadores[i]
+                if i == 1:
+                        df = pd.concat([df, df_a_distribuir_dup], ignore_index=True)
+                        df['digitador_responsable'] = digitador
+                        self.consolidado.loc[df.index, "digitador_responsable"] = digitador
+                #         lista_df_x_digitador.append([ digitador , df])
+                        #print(df)
+                else:
+                        df['digitador_responsable'] = digitador
+                        self.consolidado.loc[df.index, "digitador_responsable"] = digitador
+                #         lista_df_x_digitador.append([ digitador , df])
+                        #print(df)
+                lista_df_x_digitador.append([ digitador , df])
+            self.save_dfs(lista_df_x_digitador)
+            self.save_repo()
             
         else: 
             print('-- Out: No hay registros para distribuir')
@@ -243,6 +236,11 @@ class F3MKP():
         
     def validate_df(self, si_cambio,dist_digitadores): 
         dist_digitadores = dist_digitadores.reindex(columns = dist_digitadores.columns.tolist() + (const.cols_a_agregar))
+        estados = pd.DataFrame()
+        estados['indice_f3'] = self.consolidado['indice_f3']
+        estados['estado_descrip'] = self.consolidado['estado_descrip']
+        dist_digitadores['indice_f3'] = pd.to_numeric(dist_digitadores['indice_f3'])
+        dist_digitadores = dist_digitadores.merge(estados, how='left')
         dist_digitadores = dist_digitadores.loc[dist_digitadores.indice_f3.isin(si_cambio)]
         sop_g = (dist_digitadores.dg_soporte_guia_transp)
         est_en = (dist_digitadores.dg_entregado_guia_plataf_transp)
