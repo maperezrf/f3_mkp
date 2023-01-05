@@ -138,12 +138,12 @@ class F3MKP():
                 if i == 1:
                         df = pd.concat([df, df_a_distribuir_dup], ignore_index=True)
                         df['digitador_responsable'] = digitador
-                        self.consolidado.loc[df.index, "digitador_responsable"] = digitador
+                        self.consolidado.loc[df.indice_f3, "digitador_responsable"] = digitador
                 #         lista_df_x_digitador.append([ digitador , df])
                         #print(df)
                 else:
                         df['digitador_responsable'] = digitador
-                        self.consolidado.loc[df.index, "digitador_responsable"] = digitador
+                        self.consolidado.loc[df.indice_f3, "digitador_responsable"] = digitador
                 #         lista_df_x_digitador.append([ digitador , df])
                         #print(df)
                 lista_df_x_digitador.append([ digitador , df])
@@ -379,7 +379,7 @@ class F3MKP():
         indice = self.consolidado.loc[(self.consolidado.nro_devolucion.isin(list_dist)) &   (self.consolidado["dup_f3"]!='no') ,'indice_f3']
         self.consolidado.loc[(self.consolidado.indice_f3.isin(indice)), 'digitador_responsable'] = np.nan
         self.consolidado.loc[(self.consolidado.indice_f3.isin(indice)), 'tipificacion_1'] = np.nan
-        if len(list_dist) == self.consolidado.loc[(self.consolidado.indice_f3.isin(indice))].shape[0]:
-            self.guardar_consolidado()
-        else:
-            print("----NO SE PUEDE GUARDAR EL CONSOLIDADO---")
+        # if len(list_dist) == self.consolidado.loc[(self.consolidado.indice_f3.isin(indice))].shape[0]:
+        self.guardar_consolidado()
+        # else:
+        #     print("----NO SE PUEDE GUARDAR EL CONSOLIDADO---")
