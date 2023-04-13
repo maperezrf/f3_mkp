@@ -199,6 +199,7 @@ class F3MKP():
         for i in files_names: 
             files_store.append(pd.read_excel(f'{path}/{i}',dtype=object,keep_default_na=False,na_values=[""]))
         nc_df = pd.concat(files_store)
+        nc_df = nc_df[nc_df['indice_f3'].notna()]
         # nc_df["entregado_a_adm"] =+ 1 #TODO este comando poner mas adelante
         return nc_df
     
